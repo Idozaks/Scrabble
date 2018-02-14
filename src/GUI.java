@@ -1,8 +1,10 @@
 
+import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.HeadlessException;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -12,6 +14,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -36,11 +41,44 @@ public class GUI extends javax.swing.JFrame {
 
     ArrayList<String> words = new ArrayList<>();
 
+    Tile blankDroppedTile;
+
     /**
      * Creates new form GUI
      */
     public GUI() {
         initComponents();
+
+        for (int i = 0; i < jPanelLetters.getComponentCount(); i++) {
+
+            final String buttonText = ((JButton)jPanelLetters.getComponent(i)).getText();
+            jPanelLetters.getComponent(i).addMouseListener(new MouseAdapter() {
+
+                @Override
+                public void mouseClicked(MouseEvent me) {
+                    int index = -1;
+                    for (int j = 0; j < bottomPlayerHand.length; j++) {
+                        if (bottomPlayerHand[j] == focusedPlayerHand) {
+                            index = j;
+                        }
+                    }
+
+                    focusedLetter = buttonText;
+
+                    try {
+                        new Robot().mouseMove(getX() + getWidth() / 2 -70, getY() + getHeight() / 2 -5);
+                    } catch (AWTException ex) {
+                        Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+                    putLetter(focusedBoardTile, buttonText, index);
+
+                    jFrameBlankSelect.setVisible(false);
+                }
+            }
+            );
+        }
+
         try {
             readDictionary();
             System.out.println();
@@ -76,10 +114,10 @@ public class GUI extends javax.swing.JFrame {
                         if (thisTurnWord.contains(board[_i][_j])) {
                             for (int k = 0; k < bottomPlayer.length; k++) {
                                 if (bottomPlayer[k] == null) {
-                                    if (board[_i][_j].isBlank) {
+                                    if (blanks[_i][_j] == true) {
                                         bottomPlayer[k] = "_";
                                         bottomPlayerHand[k].setText("_");
-                                        board[_i][_j].setNotBlank();
+                                        blanks[_i][_j] = false;
                                         break;
                                     } else {
                                         bottomPlayer[k] = board[_i][_j].getLetter();
@@ -105,9 +143,9 @@ public class GUI extends javax.swing.JFrame {
                     @Override
                     public void mouseExited(MouseEvent me) {
                         if (!jFrameBlankSelect.isVisible()) {
-                            board[_i][_j].label.setBackground(paintTile(_i, _j, false));
                             focusedBoardTile = null;
                         }
+                            board[_i][_j].label.setBackground(paintTile(_i, _j, false));
                     }
 
                     @Override
@@ -156,7 +194,6 @@ public class GUI extends javax.swing.JFrame {
                 public void mouseReleased(MouseEvent me) {
                     if (focusedBoardTile != null) { // put the focusedLetter on the board
                         if (focusedLetter != null) {
-
                             putLetter(focusedBoardTile, focusedLetter, _i);
                         }
                     } else { // if the letter was "dropped" not on a tile
@@ -232,45 +269,38 @@ public class GUI extends javax.swing.JFrame {
 
     java.awt.Cursor defuaultCursor = this.getCursor();
 
+    boolean[][] blanks = new boolean[board.length][board[0].length];
+
     public void putLetter(Tile tile, String str, int placeInPlayerHand) {
         if (str.equals("_")) {
-            jFrameBlankSelect.setSize(874, 175);
+
+            jFrameBlankSelect.setSize(874, 225);
             jFrameBlankSelect.setLocationRelativeTo(this);
-            jFrameBlankSelect.setLocation(this.getX() + 30, this.getHeight() / 2 - 20);
-            jFrameBlankSelect.setVisible(true);
-            for (int i = 0; i < jPanelLetters.getComponentCount(); i++) {
-                final int _i = i;
-                JButton thisButton = (JButton)jPanelLetters.getComponent(i);
-                thisButton.addMouseListener(new MouseAdapter() {
-
-                    @Override
-                    public void mouseClicked(MouseEvent me) {
-                        tile.letter = thisButton.getText();
-                        tile.label.setText(thisButton.getText());
-                        tile.setBlank();
-                        jFrameBlankSelect.setVisible(false);
-
-                        removeTheseMouseListeners();
-                    }
-
-                });
-
+            jFrameBlankSelect.setLocation(this.getX() + this.getWidth(), this.getHeight() / 2 - 20);
+            try {
+                new Robot().mouseMove(jFrameBlankSelect.getX() + jFrameBlankSelect.getWidth() / 2,
+                        jFrameBlankSelect.getY() + jFrameBlankSelect.getHeight() - 20);
+            } catch (AWTException ex) {
+                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
             }
-        }
-        if (ValidLetterPlacement(tile)) {
-            tile.label.setText(focusedLetter); // assign the letter to the board tile
-            focusedBoardTile = null; //nullify the refernce to the board tile
-            focusedLetter = null; //nullify the reference to the letter
-            bottomPlayer[placeInPlayerHand] = null; // set the backstage letter of the player to null
-            focusedPlayerHand.setText(null); // set the text of the label to null
-            setCursor(defuaultCursor);
-            focusedPlayerHand = null; //removes the reference to the focused label
-
+            blanks[tile.y][tile.x] = true;
+            jFrameBlankSelect.setVisible(true);
         } else {
-            focusedPlayerHand.setText(focusedLetter);
-            focusedLetter = null;
-            setCursor(defuaultCursor);
-            focusedPlayerHand = null;
+            if (ValidLetterPlacement(tile)) {
+                tile.label.setText(focusedLetter); // assign the letter to the board tile
+                focusedBoardTile = null; //nullify the refernce to the board tile
+                focusedLetter = null; //nullify the reference to the letter
+                bottomPlayer[placeInPlayerHand] = null; // set the backstage letter of the player to null
+                focusedPlayerHand.setText(null); // set the text of the label to null
+                setCursor(defuaultCursor);
+                focusedPlayerHand = null; //removes the reference to the focused label
+
+            } else {
+                focusedPlayerHand.setText(focusedLetter);
+                focusedLetter = null;
+                setCursor(defuaultCursor);
+                focusedPlayerHand = null;
+            }
         }
 //        for (Tile _tile : thisTurnWord) {
 //            System.out.print(board[_tile.y][_tile.x].letter + " ");
@@ -778,6 +808,7 @@ public class GUI extends javax.swing.JFrame {
         jLetter24 = new javax.swing.JButton();
         jLetter25 = new javax.swing.JButton();
         jLetter26 = new javax.swing.JButton();
+        jLabel226 = new javax.swing.JLabel();
         jPanel3 = new javax.swing.JPanel();
         BottomPlayer1 = new javax.swing.JLabel();
         BottomPlayer2 = new javax.swing.JLabel();
@@ -1110,13 +1141,11 @@ public class GUI extends javax.swing.JFrame {
                 .addGap(18, 18, 18)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel239, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel240, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jLabel240, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel241, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel242, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jLabel242, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel243, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -1246,13 +1275,22 @@ public class GUI extends javax.swing.JFrame {
         jLetter26.setText("Z");
         jPanelLetters.add(jLetter26);
 
+        jLabel226.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
+        jLabel226.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel226.setText("Choose a letter");
+
         javax.swing.GroupLayout jFrameBlankSelectLayout = new javax.swing.GroupLayout(jFrameBlankSelect.getContentPane());
         jFrameBlankSelect.getContentPane().setLayout(jFrameBlankSelectLayout);
         jFrameBlankSelectLayout.setHorizontalGroup(
             jFrameBlankSelectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jFrameBlankSelectLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanelLetters, javax.swing.GroupLayout.PREFERRED_SIZE, 854, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jFrameBlankSelectLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jFrameBlankSelectLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jPanelLetters, javax.swing.GroupLayout.PREFERRED_SIZE, 854, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(jFrameBlankSelectLayout.createSequentialGroup()
+                        .addGap(332, 332, 332)
+                        .addComponent(jLabel226, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jFrameBlankSelectLayout.setVerticalGroup(
@@ -1260,7 +1298,9 @@ public class GUI extends javax.swing.JFrame {
             .addGroup(jFrameBlankSelectLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanelLetters, javax.swing.GroupLayout.PREFERRED_SIZE, 128, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addComponent(jLabel226, javax.swing.GroupLayout.DEFAULT_SIZE, 41, Short.MAX_VALUE)
+                .addGap(23, 23, 23))
         );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -3240,6 +3280,7 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel223;
     private javax.swing.JLabel jLabel224;
     private javax.swing.JLabel jLabel225;
+    private javax.swing.JLabel jLabel226;
     private javax.swing.JLabel jLabel23;
     private javax.swing.JLabel jLabel237;
     private javax.swing.JLabel jLabel238;

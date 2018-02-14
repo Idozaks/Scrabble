@@ -7,7 +7,6 @@ public class Tile {
     String letter;
     TileType type;
     int x, y;
-    boolean isBlank;
 
     public Tile(JLabel _label, String _letter, TileType _type, int _x, int _y) {
         label = _label;
@@ -15,14 +14,6 @@ public class Tile {
         type = _type;
         x = _x;
         y = _y;
-    }
-
-    public void setBlank() {
-        isBlank = true;
-    }
-    
-    public void setNotBlank() {
-        isBlank = false;
     }
 
     public void setLocation(int x, int y) {
