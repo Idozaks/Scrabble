@@ -66,7 +66,7 @@ public class GUI extends javax.swing.JFrame {
                     focusedLetter = buttonText;
 
                     try {
-                        new Robot().mouseMove(getX() + getWidth() / 2 -70, getY() + getHeight() / 2 -5);
+                        new Robot().mouseMove(getX() + getWidth() / 2 - 70, getY() + getHeight() / 2 - 5);
                     } catch (AWTException ex) {
                         Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -103,32 +103,28 @@ public class GUI extends javax.swing.JFrame {
 
                     @Override
                     public void mouseClicked(MouseEvent me) {
-//                        try {
-//                            System.out.println(board[_i][_j].letter.toUpperCase());
-//                        } catch (NullPointerException e) {
-//                        }
-//                        System.out.println(board[_i][_j].x + " " + board[_i][_j].y);
+                        if (!jFrameBlankSelect.isVisible()) {
+                            System.out.println(board[_i][_j].letter);
 
-                        System.out.println(board[_i][_j].letter);
-
-                        if (thisTurnWord.contains(board[_i][_j])) {
-                            for (int k = 0; k < bottomPlayer.length; k++) {
-                                if (bottomPlayer[k] == null) {
-                                    if (blanks[_i][_j] == true) {
-                                        bottomPlayer[k] = "_";
-                                        bottomPlayerHand[k].setText("_");
-                                        blanks[_i][_j] = false;
-                                        break;
-                                    } else {
-                                        bottomPlayer[k] = board[_i][_j].getLetter();
-                                        bottomPlayerHand[k].setText(board[_i][_j].letter);
-                                        break;
+                            if (thisTurnWord.contains(board[_i][_j])) {
+                                for (int k = 0; k < bottomPlayer.length; k++) {
+                                    if (bottomPlayer[k] == null) {
+                                        if (blanks[_i][_j] == true) {
+                                            bottomPlayer[k] = "_";
+                                            bottomPlayerHand[k].setText("_");
+                                            blanks[_i][_j] = false;
+                                            break;
+                                        } else {
+                                            bottomPlayer[k] = board[_i][_j].getLetter();
+                                            bottomPlayerHand[k].setText(board[_i][_j].letter);
+                                            break;
+                                        }
                                     }
                                 }
+                                thisTurnWord.remove(board[_i][_j]);
+                                board[_i][_j].letter = null;
+                                board[_i][_j].label.setText(null);
                             }
-                            thisTurnWord.remove(board[_i][_j]);
-                            board[_i][_j].letter = null;
-                            board[_i][_j].label.setText(null);
                         }
                     }
 
@@ -145,7 +141,7 @@ public class GUI extends javax.swing.JFrame {
                         if (!jFrameBlankSelect.isVisible()) {
                             focusedBoardTile = null;
                         }
-                            board[_i][_j].label.setBackground(paintTile(_i, _j, false));
+                        board[_i][_j].label.setBackground(paintTile(_i, _j, false));
                     }
 
                     @Override
@@ -181,12 +177,14 @@ public class GUI extends javax.swing.JFrame {
 
                 @Override
                 public void mousePressed(MouseEvent me) {
-                    focusedLetter = bottomPlayer[_i];
+                    if (!jFrameBlankSelect.isVisible()) {
+                        focusedLetter = bottomPlayer[_i];
 
-                    focusedPlayerHand = bottomPlayerHand[_i];
-                    if (focusedLetter != null) {
-                        setMouse(focusedLetter);
-                        focusedPlayerHand.setText(null);
+                        focusedPlayerHand = bottomPlayerHand[_i];
+                        if (focusedLetter != null) {
+                            setMouse(focusedLetter);
+                            focusedPlayerHand.setText(null);
+                        }
                     }
                 }
 
@@ -273,16 +271,12 @@ public class GUI extends javax.swing.JFrame {
 
     public void putLetter(Tile tile, String str, int placeInPlayerHand) {
         if (str.equals("_")) {
-
             jFrameBlankSelect.setSize(874, 225);
             jFrameBlankSelect.setLocationRelativeTo(this);
             jFrameBlankSelect.setLocation(this.getX() + this.getWidth(), this.getHeight() / 2 - 20);
-            try {
-                new Robot().mouseMove(jFrameBlankSelect.getX() + jFrameBlankSelect.getWidth() / 2,
-                        jFrameBlankSelect.getY() + jFrameBlankSelect.getHeight() - 20);
-            } catch (AWTException ex) {
-                Logger.getLogger(GUI.class.getName()).log(Level.SEVERE, null, ex);
-            }
+
+            setCursor(defuaultCursor);
+
             blanks[tile.y][tile.x] = true;
             jFrameBlankSelect.setVisible(true);
         } else {
@@ -311,19 +305,29 @@ public class GUI extends javax.swing.JFrame {
     ArrayList<Tile> thisTurnWord;
 
     boolean ValidLetterPlacement(Tile tile) {
-        if (thisTurnWord.isEmpty()) {
-            thisTurnWord.add(tile);
+        if (firstTurn) {
+            if (thisTurnWord.isEmpty()) {
+                thisTurnWord.add(tile);
 
-            tile.setLetter(focusedLetter);
+                tile.setLetter(focusedLetter);
 
-            return true;
-        } else {
-            Tile placedLetter = thisTurnWord.get(thisTurnWord.size() - 1);
-            if ((tile.x == placedLetter.x && tile.y - placedLetter.y == 1)
-                    || (tile.y == placedLetter.y && tile.x - placedLetter.x == 1)) {
-                if (thisTurnWord.size() >= 2) {
-                    Tile firstLetter = thisTurnWord.get(0);
-                    if (tile.x == firstLetter.x || tile.y == firstLetter.y) {
+                return true;
+            } else {
+                Tile placedLetter = thisTurnWord.get(thisTurnWord.size() - 1);
+                if ((tile.x == placedLetter.x && tile.y - placedLetter.y == 1)
+                        || (tile.y == placedLetter.y && tile.x - placedLetter.x == 1)) {
+                    if (thisTurnWord.size() >= 2) {
+                        Tile firstLetter = thisTurnWord.get(0);
+                        if (tile.x == firstLetter.x || tile.y == firstLetter.y) {
+                            if (tile.letter == null) {
+                                thisTurnWord.add(tile);
+
+                                tile.setLetter(focusedLetter);
+
+                                return true;
+                            }
+                        }
+                    } else {
                         if (tile.letter == null) {
                             thisTurnWord.add(tile);
 
@@ -332,14 +336,14 @@ public class GUI extends javax.swing.JFrame {
                             return true;
                         }
                     }
-                } else {
-                    if (tile.letter == null) {
-                        thisTurnWord.add(tile);
-
-                        tile.setLetter(focusedLetter);
-
-                        return true;
-                    }
+                }
+            }
+        } else {
+            if (board[tile.y][tile.x + 1] != null || board[tile.y][tile.x - 1] != null
+                    || board[tile.y - 1][tile.x] != null || board[tile.y + 1][tile.x] != null) {
+                if (board[tile.y][tile.x + 1].letter != null || board[tile.y][tile.x - 1].letter != null
+                    || board[tile.y - 1][tile.x].letter != null || board[tile.y + 1][tile.x].letter != null) {
+                    System.out.println(true);
                 }
             }
         }
@@ -1168,6 +1172,12 @@ public class GUI extends javax.swing.JFrame {
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(21, Short.MAX_VALUE))
         );
+
+        jFrameBlankSelect.addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent evt) {
+                jFrameBlankSelectWindowClosing(evt);
+            }
+        });
 
         jPanelLetters.setLayout(new java.awt.GridLayout(2, 13));
 
@@ -3085,8 +3095,20 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_formComponentMoved
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        ValidWordTurn();
+        if (!jFrameBlankSelect.isVisible()) {
+            ValidWordTurn();
+            thisTurnWord.clear();
+            System.out.println(thisTurnWord.size());
+            firstTurn = false;
+        }
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jFrameBlankSelectWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_jFrameBlankSelectWindowClosing
+        focusedPlayerHand.setText(focusedLetter);
+        focusedLetter = null;
+        setCursor(defuaultCursor);
+        focusedPlayerHand = null;
+    }//GEN-LAST:event_jFrameBlankSelectWindowClosing
 
     /**
      * @param args the command line arguments

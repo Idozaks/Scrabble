@@ -179,6 +179,9 @@
       </SubComponents>
     </Container>
     <Container class="javax.swing.JFrame" name="jFrameBlankSelect">
+      <Events>
+        <EventHandler event="windowClosing" listener="java.awt.event.WindowListener" parameters="java.awt.event.WindowEvent" handler="jFrameBlankSelectWindowClosing"/>
+      </Events>
 
       <Layout>
         <DimensionLayout dim="0">
