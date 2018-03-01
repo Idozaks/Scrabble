@@ -27,11 +27,15 @@ public class GUI extends javax.swing.JFrame {
     JLabel[][] labelBoard = new JLabel[15][15];
     Tile[][] board = new Tile[15][15];
 
+    ArrayList<Word> placedWords = new ArrayList<>();
+
     final Color cyan = new Color(83, 212, 251);
     final Color blue = new Color(22, 85, 250);
     final Color red = new Color(246, 73, 61);
     final Color pink = new Color(252, 176, 180);
     final Color normal = new Color(0, 160, 133);
+
+    Tile centerTile;
 
     boolean firstTurn = true;
 
@@ -39,7 +43,7 @@ public class GUI extends javax.swing.JFrame {
 
     String[] bottomPlayer = new String[7];
 
-    ArrayList<String> words = new ArrayList<>();
+    ArrayList<String> dictWords = new ArrayList<>();
 
     Tile blankDroppedTile;
 
@@ -62,7 +66,6 @@ public class GUI extends javax.swing.JFrame {
                             index = j;
                         }
                     }
-
                     focusedLetter = buttonText;
 
                     try {
@@ -105,6 +108,7 @@ public class GUI extends javax.swing.JFrame {
                     public void mouseClicked(MouseEvent me) {
                         if (!jFrameBlankSelect.isVisible()) {
                             System.out.println(board[_i][_j].letter);
+//                            System.out.println(_i + " " + _j);
 
                             if (thisTurnWord.contains(board[_i][_j])) {
                                 for (int k = 0; k < bottomPlayer.length; k++) {
@@ -144,24 +148,6 @@ public class GUI extends javax.swing.JFrame {
                         board[_i][_j].label.setBackground(paintTile(_i, _j, false));
                     }
 
-                    @Override
-                    public void mousePressed(MouseEvent me) {
-//                        if (!thisTurnWord.isEmpty()) {
-//                            
-//                            focusedLetter = bottomPlayer[_i];
-//
-//                            focusedPlayerHand = bottomPlayerHand[_i];
-//                            if (focusedLetter != null) {
-//                                setMouse(focusedLetter);
-//                                focusedPlayerHand.setText(null);
-//                            }
-//                        }
-//                        if (thisTurnWord.contains(board[_i][_j])) {
-//                            System.out.println(true + " " + board[_i][_j].letter.toUpperCase()
-//                            + " " + thisTurnWord.indexOf(board[_i][_j]));
-//                        }else System.out.println(false);
-
-                    }
                 });
             }
         }
@@ -262,6 +248,8 @@ public class GUI extends javax.swing.JFrame {
             });;
         }
 
+        centerTile = board[7][7];
+
 //        addKeyListener(this);
     }
 
@@ -339,27 +327,143 @@ public class GUI extends javax.swing.JFrame {
                 }
             }
         } else {
-            if (board[tile.y][tile.x + 1] != null || board[tile.y][tile.x - 1] != null
-                    || board[tile.y - 1][tile.x] != null || board[tile.y + 1][tile.x] != null) {
-                if (board[tile.y][tile.x + 1].letter != null || board[tile.y][tile.x - 1].letter != null
-                    || board[tile.y - 1][tile.x].letter != null || board[tile.y + 1][tile.x].letter != null) {
-                    System.out.println(true);
+
+            final int up = 0, right = 1, down = 2, left = 3;
+            ArrayList<Integer> adjacents = new ArrayList<>();
+
+            if (board[tile.y][tile.x].letter != null) {
+                System.out.println(false);
+                return false;
+            }
+
+            boolean bool = false;
+            if (tile.y == 0) {
+                if (board[tile.y][tile.x + 1] != null || board[tile.y][tile.x - 1] != null
+                        || board[tile.y + 1][tile.x] != null) {
+                    if (board[tile.y][tile.x + 1].letter != null || board[tile.y][tile.x - 1].letter != null
+                            || board[tile.y + 1][tile.x].letter != null) {
+                        if (board[tile.y][tile.x + 1].letter != null) {
+                            adjacents.add(right);
+                        }
+                        if (board[tile.y][tile.x - 1].letter != null) {
+                            adjacents.add(left);
+                        }
+                        if (board[tile.y + 1][tile.x].letter != null) {
+                            adjacents.add(down);
+                        }
+                        bool = true;
+                    }
+                }
+            } else if (tile.y == board.length - 1) { // max y
+                if (board[tile.y][tile.x + 1] != null || board[tile.y][tile.x - 1] != null
+                        || board[tile.y - 1][tile.x] != null) {
+                    if (board[tile.y][tile.x + 1].letter != null || board[tile.y][tile.x - 1].letter != null
+                            || board[tile.y - 1][tile.x].letter != null) {
+
+                        if (board[tile.y][tile.x + 1].letter != null) {
+                            adjacents.add(right);
+                        }
+                        if (board[tile.y][tile.x - 1].letter != null) {
+                            adjacents.add(left);
+                        }
+                        if (board[tile.y - 1][tile.x].letter != null) {
+                            adjacents.add(up);
+                        }
+
+                        bool = true;
+                    }
+                }
+            } else if (tile.x == 0) {
+                if (board[tile.y][tile.x + 1] != null
+                        || board[tile.y - 1][tile.x] != null || board[tile.y + 1][tile.x] != null) {
+                    if (board[tile.y][tile.x + 1].letter != null
+                            || board[tile.y - 1][tile.x].letter != null || board[tile.y + 1][tile.x].letter != null) {
+
+                        if (board[tile.y][tile.x + 1].letter != null) {
+                            adjacents.add(right);
+                        }
+                        if (board[tile.y + 1][tile.x].letter != null) {
+                            adjacents.add(down);
+                        }
+                        if (board[tile.y - 1][tile.x].letter != null) {
+                            adjacents.add(up);
+                        }
+
+                        bool = true;
+                    }
+                }
+            } else if (tile.x == board[0].length - 1) { // max x
+                if (board[tile.y][tile.x - 1] != null
+                        || board[tile.y - 1][tile.x] != null || board[tile.y + 1][tile.x] != null) {
+                    if (board[tile.y][tile.x - 1].letter != null
+                            || board[tile.y - 1][tile.x].letter != null || board[tile.y + 1][tile.x].letter != null) {
+
+                        if (board[tile.y][tile.x - 1].letter != null) {
+                            adjacents.add(left);
+                        }
+                        if (board[tile.y + 1][tile.x].letter != null) {
+                            adjacents.add(down);
+                        }
+                        if (board[tile.y - 1][tile.x].letter != null) {
+                            adjacents.add(up);
+                        }
+
+                        bool = true;
+                    }
+                }
+            } else {
+                if (board[tile.y][tile.x + 1] != null || board[tile.y][tile.x - 1] != null
+                        || board[tile.y - 1][tile.x] != null || board[tile.y + 1][tile.x] != null) {
+                    if (board[tile.y][tile.x + 1].letter != null || board[tile.y][tile.x - 1].letter != null
+                            || board[tile.y - 1][tile.x].letter != null || board[tile.y + 1][tile.x].letter != null) {
+                        if (board[tile.y][tile.x + 1].letter != null) {
+                            adjacents.add(right);
+                        }
+                        if (board[tile.y][tile.x - 1].letter != null) {
+                            adjacents.add(left);
+                        }
+                        if (board[tile.y + 1][tile.x].letter != null) {
+                            adjacents.add(down);
+                        }
+                        if (board[tile.y - 1][tile.x].letter != null) {
+                            adjacents.add(up);
+                        }
+
+                        bool = true;
+                    }
                 }
             }
+            if (bool) {
+
+            }
+            System.out.println(bool);
+            return bool;
         }
         return false;
     }
 
-    public void ValidWordTurn() {
+    public boolean ValidWordTurn() { // print why it might be invalid ?
         String theWord = "";
+        boolean bool;
         for (int i = 0; i < thisTurnWord.size(); i++) {
             theWord += thisTurnWord.get(i).getLetter().toUpperCase();
         }
-        if (words.contains(theWord)) {
-            System.out.println(true);
+        if (dictWords.contains(theWord)) {
+            bool = true;
+            if (firstTurn) {
+                boolean PlacedInCenter = false;
+                for (Tile tile : thisTurnWord) {
+                    if (tile == centerTile) {
+                        PlacedInCenter = true;
+                    }
+                }
+                bool = PlacedInCenter;
+            }
         } else {
-            System.out.println(false);
+            bool = false;
         }
+        System.out.println(bool);
+        return bool;
     }
 
     JLabel[] bottomPlayerHand = new JLabel[7];
@@ -397,6 +501,10 @@ public class GUI extends javax.swing.JFrame {
             }
         }
         return null;
+    }
+
+    public int CalculateWordValue(ArrayList<Tile> word) {
+        return 0;
     }
 
     final void setBoard() {
@@ -2975,14 +3083,14 @@ public class GUI extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGap(43, 43, 43)
                         .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, 700, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(89, Short.MAX_VALUE))
+                .addContainerGap(24, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(98, 98, 98)
+                        .addGap(38, 38, 38)
                         .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 582, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(338, 338, 338)
@@ -3096,10 +3204,14 @@ public class GUI extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         if (!jFrameBlankSelect.isVisible()) {
-            ValidWordTurn();
-            thisTurnWord.clear();
-            System.out.println(thisTurnWord.size());
-            firstTurn = false;
+            if (ValidWordTurn()) {
+                int dir = (thisTurnWord.get(0).y == thisTurnWord.get(1).y) ? Word.horizontal : Word.vertical;
+                placedWords.add(new Word(thisTurnWord, dir, CalculateWordValue(thisTurnWord)));
+                thisTurnWord.clear();
+                System.out.println(thisTurnWord.size());
+                firstTurn = false;
+                System.out.println(placedWords.get(0).getWord());
+            }
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
@@ -3439,7 +3551,7 @@ public class GUI extends javax.swing.JFrame {
             String readLine = "";
 
             while ((readLine = b.readLine()) != null) {
-                words.add(readLine);
+                dictWords.add(readLine);
             }
         } catch (IOException e) {
             e.printStackTrace();
