@@ -15,14 +15,22 @@ public class Word {
     public int direction;
     // some kind of ownership variable?
     public int wordValue;
+    public String word;
 
+    /**
+     * 
+     * @param arr the word places in form of a List of Tiles
+     * @param dir what direction the word was placed (i.e horiz / vert)
+     * @param val the value of the word
+     */
     public Word(ArrayList<Tile> arr, int dir, int val) {
         wordTiles = (ArrayList<Tile>)arr.clone();
         direction = dir;
         wordValue = val;
+        word = getWord();
     }
 
-    public String getWord() {
+    public final String getWord() {
         String word = "";
         for (int i = 0; i < wordTiles.size(); i++) {
             if (i == 0) {

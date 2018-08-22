@@ -1,6 +1,7 @@
 
 import javax.swing.JLabel;
 
+
 public class Tile {
 
     public JLabel label;
@@ -8,6 +9,14 @@ public class Tile {
     TileType type;
     int x, y;
 
+    /**
+     * 
+     * @param _label the assigned label
+     * @param _letter the letter this tile will contain
+     * @param _type the type of score on this tile
+     * @param _x 
+     * @param _y 
+     */
     public Tile(JLabel _label, String _letter, TileType _type, int _x, int _y) {
         label = _label;
         letter = _letter;
