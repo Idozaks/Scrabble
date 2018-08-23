@@ -27,7 +27,7 @@ public class GUI extends javax.swing.JFrame {
     Tile[][] board = new Tile[15][15];
 
     ArrayList<Word> placedWords = new ArrayList<>();
-    
+
     ArrayList<Tile> thisTurnWord;
 
     final Color cyan = new Color(83, 212, 251);
@@ -85,7 +85,6 @@ public class GUI extends javax.swing.JFrame {
                     blanks[focusedBoardTile.y][focusedBoardTile.x] = true;
                     putLetter(focusedBoardTile, buttonText, index);
 
-                    
                     jFrameJokerSelect.setVisible(false);
                 }
             }
@@ -124,25 +123,36 @@ public class GUI extends javax.swing.JFrame {
 //                            System.out.println(_i + " " + _j);
 
                             if (thisTurnWord.contains(board[_i][_j])) { //if you clicked a letter that was placed this turn
-                                for (int k = 0; k < bottomPlayerLetters.length; k++) {
-                                    if (bottomPlayerLetters[k] == null) { //finds the first empty hand-spot
-                                        if (blanks[_i][_j] == true) { //checks if the letter retrieved was a joker before placed.
-                                            //gives back a joker
-                                            bottomPlayerLetters[k] = "_";
-                                            bottomPlayerLabels[k].setText("_");
-                                            blanks[_i][_j] = false;
-                                            break;
-                                        } else {
-                                            //gives back the letter as-is.
-                                            bottomPlayerLetters[k] = board[_i][_j].getLetter();
-                                            bottomPlayerLabels[k].setText(board[_i][_j].letter);
-                                            break;
+                                if (board[_i][_j].isMoveable()) {
+                                    for (int k = 0; k < bottomPlayerLetters.length; k++) {
+                                        if (bottomPlayerLetters[k] == null) { //finds the first empty hand-spot
+                                            if (blanks[_i][_j] == true) { //checks if the letter retrieved was a joker before placed.
+                                                //gives back a joker
+                                                bottomPlayerLetters[k] = "_";
+                                                bottomPlayerLabels[k].setText("_");
+                                                blanks[_i][_j] = false;
+                                                break;
+                                            } else {
+                                                //gives back the letter as-is.
+                                                bottomPlayerLetters[k] = board[_i][_j].getLetter();
+                                                bottomPlayerLabels[k].setText(board[_i][_j].letter);
+                                                break;
+                                            }
                                         }
                                     }
+                                    boolean justOldLetterLeft=true;
+                                    thisTurnWord.remove(board[_i][_j]); //removes the picked letter from letters placed this turn
+                                    for (Tile tile : thisTurnWord) {
+                                        if (tile.isMoveable()) {
+                                            justOldLetterLeft=false;
+                                        }
+                                    }
+                                    if (justOldLetterLeft) {
+                                        thisTurnWord.clear();
+                                    }
+                                    board[_i][_j].letter = null;
+                                    board[_i][_j].label.setText(null);
                                 }
-                                thisTurnWord.remove(board[_i][_j]); //removes the picked letter from letters placed this turn
-                                board[_i][_j].letter = null;
-                                board[_i][_j].label.setText(null);
                             }
                         }
                     }
@@ -292,8 +302,9 @@ public class GUI extends javax.swing.JFrame {
             jFrameJokerSelect.setVisible(true);
         } else {
             if (ValidLetterPlacement(tile)) {
-                tile.label.setText(focusedLetter); // assign the letter to the board tile
-                focusedBoardTile = null; //nullify the refernce to the board tile
+                tile.label.setText(str); // assign the letter to the board tile
+                tile.setMoveable(true);
+                tile = null; //nullify the refernce to the board tile
                 focusedLetter = null; //nullify the reference to the letter
                 bottomPlayerLetters[placeInPlayerHand] = null; // set the backstage letter of the player to null
                 focusedHandLabel.setText(null); // set the text of the label to null
@@ -301,6 +312,9 @@ public class GUI extends javax.swing.JFrame {
                 focusedHandLabel = null; //removes the reference to the focused label
 
             } else {
+                if (blanks[tile.y][tile.x]) {
+                    focusedLetter = "_";
+                }
                 focusedHandLabel.setText(focusedLetter);
                 focusedLetter = null;
                 setCursor(defuaultCursor);
@@ -311,9 +325,14 @@ public class GUI extends javax.swing.JFrame {
 //            System.out.print(board[_tile.y][_tile.x].letter + " ");
 //        }
 //        System.out.println();
-        
+
     }
 
+    /**
+     *
+     * @param tile the tile placed
+     * @return
+     */
     boolean ValidLetterPlacement(Tile tile) {
         if (firstTurn) {
             if (thisTurnWord.isEmpty()) {
@@ -350,7 +369,11 @@ public class GUI extends javax.swing.JFrame {
             }
         } else {
 
-            final int up = 0, right = 1, down = 2, left = 3;
+            final int UP = 0, RIGHT = 1, DOWN = 2, LEFT = 3;
+
+            /**
+             * list that contains adjacent tiles to the tile-placed
+             */
             ArrayList<Integer> adjacents = new ArrayList<>();
 
             if (board[tile.y][tile.x].letter != null) {
@@ -358,105 +381,147 @@ public class GUI extends javax.swing.JFrame {
                 return false;
             }
 
-            boolean bool = false;
-            if (tile.y == 0) {
+            ////////////////////////////////////
+            boolean bool = false; //whether found an adjacent tile
+
+            if (tile.y == 0) { //tile is at the top row
                 if (board[tile.y][tile.x + 1] != null || board[tile.y][tile.x - 1] != null
                         || board[tile.y + 1][tile.x] != null) {
                     if (board[tile.y][tile.x + 1].letter != null || board[tile.y][tile.x - 1].letter != null
-                            || board[tile.y + 1][tile.x].letter != null) {
+                            || board[tile.y + 1][tile.x].letter != null) { //placed adjacent to another tile
                         if (board[tile.y][tile.x + 1].letter != null) {
-                            adjacents.add(right);
+                            adjacents.add(RIGHT);
                         }
                         if (board[tile.y][tile.x - 1].letter != null) {
-                            adjacents.add(left);
+                            adjacents.add(LEFT);
                         }
                         if (board[tile.y + 1][tile.x].letter != null) {
-                            adjacents.add(down);
+                            adjacents.add(DOWN);
                         }
                         bool = true;
                     }
                 }
-            } else if (tile.y == board.length - 1) { // max y
+            } else if (tile.y == board.length - 1) { // bottom row
                 if (board[tile.y][tile.x + 1] != null || board[tile.y][tile.x - 1] != null
                         || board[tile.y - 1][tile.x] != null) {
                     if (board[tile.y][tile.x + 1].letter != null || board[tile.y][tile.x - 1].letter != null
                             || board[tile.y - 1][tile.x].letter != null) {
-
                         if (board[tile.y][tile.x + 1].letter != null) {
-                            adjacents.add(right);
+                            adjacents.add(RIGHT);
                         }
                         if (board[tile.y][tile.x - 1].letter != null) {
-                            adjacents.add(left);
+                            adjacents.add(LEFT);
                         }
                         if (board[tile.y - 1][tile.x].letter != null) {
-                            adjacents.add(up);
+                            adjacents.add(UP);
                         }
 
                         bool = true;
                     }
                 }
-            } else if (tile.x == 0) {
+            } else if (tile.x == 0) { //right-most column
                 if (board[tile.y][tile.x + 1] != null
-                        || board[tile.y - 1][tile.x] != null || board[tile.y + 1][tile.x] != null) {
+                        || board[tile.y - 1][tile.x] != null
+                        || board[tile.y + 1][tile.x] != null) {
                     if (board[tile.y][tile.x + 1].letter != null
-                            || board[tile.y - 1][tile.x].letter != null || board[tile.y + 1][tile.x].letter != null) {
+                            || board[tile.y - 1][tile.x].letter != null
+                            || board[tile.y + 1][tile.x].letter != null) {
 
                         if (board[tile.y][tile.x + 1].letter != null) {
-                            adjacents.add(right);
+                            adjacents.add(RIGHT);
                         }
                         if (board[tile.y + 1][tile.x].letter != null) {
-                            adjacents.add(down);
+                            adjacents.add(DOWN);
                         }
                         if (board[tile.y - 1][tile.x].letter != null) {
-                            adjacents.add(up);
+                            adjacents.add(UP);
                         }
 
                         bool = true;
                     }
                 }
-            } else if (tile.x == board[0].length - 1) { // max x
+            } else if (tile.x == board[0].length - 1) { //left-most column
                 if (board[tile.y][tile.x - 1] != null
-                        || board[tile.y - 1][tile.x] != null || board[tile.y + 1][tile.x] != null) {
+                        || board[tile.y - 1][tile.x] != null
+                        || board[tile.y + 1][tile.x] != null) {
                     if (board[tile.y][tile.x - 1].letter != null
-                            || board[tile.y - 1][tile.x].letter != null || board[tile.y + 1][tile.x].letter != null) {
+                            || board[tile.y - 1][tile.x].letter != null
+                            || board[tile.y + 1][tile.x].letter != null) {
 
                         if (board[tile.y][tile.x - 1].letter != null) {
-                            adjacents.add(left);
+                            adjacents.add(LEFT);
                         }
                         if (board[tile.y + 1][tile.x].letter != null) {
-                            adjacents.add(down);
+                            adjacents.add(DOWN);
                         }
                         if (board[tile.y - 1][tile.x].letter != null) {
-                            adjacents.add(up);
+                            adjacents.add(UP);
                         }
 
                         bool = true;
                     }
                 }
             } else {
-                if (board[tile.y][tile.x + 1] != null || board[tile.y][tile.x - 1] != null
-                        || board[tile.y - 1][tile.x] != null || board[tile.y + 1][tile.x] != null) {
-                    if (board[tile.y][tile.x + 1].letter != null || board[tile.y][tile.x - 1].letter != null
-                            || board[tile.y - 1][tile.x].letter != null || board[tile.y + 1][tile.x].letter != null) {
+                if (board[tile.y][tile.x + 1] != null
+                        || board[tile.y][tile.x - 1] != null
+                        || board[tile.y - 1][tile.x] != null
+                        || board[tile.y + 1][tile.x] != null) {
+
+                    if (board[tile.y][tile.x + 1].letter != null
+                            || board[tile.y][tile.x - 1].letter != null
+                            || board[tile.y - 1][tile.x].letter != null
+                            || board[tile.y + 1][tile.x].letter != null) {
+
                         if (board[tile.y][tile.x + 1].letter != null) {
-                            adjacents.add(right);
+                            adjacents.add(RIGHT);
                         }
                         if (board[tile.y][tile.x - 1].letter != null) {
-                            adjacents.add(left);
+                            adjacents.add(LEFT);
                         }
                         if (board[tile.y + 1][tile.x].letter != null) {
-                            adjacents.add(down);
+                            adjacents.add(DOWN);
                         }
                         if (board[tile.y - 1][tile.x].letter != null) {
-                            adjacents.add(up);
+                            adjacents.add(UP);
                         }
 
                         bool = true;
                     }
                 }
             }
-            if (bool) {
+            if (bool) { //if the tile was placed adjacent to another
+                tile.setLetter(focusedLetter);
+                for (Integer dir : adjacents) { //for-each adjact tile-direction
+                    switch (dir) {
+                        case UP:
+                            if (!thisTurnWord.contains(board[tile.y - 1][tile.x])) {
+                                thisTurnWord.add(board[tile.y - 1][tile.x]);
+                            }
+                            thisTurnWord.add(tile);
+                            break;
 
+                        case LEFT:
+                            if (!thisTurnWord.contains(board[tile.y][tile.x - 1])) {
+                                thisTurnWord.add(board[tile.y][tile.x - 1]);
+                            }
+                            thisTurnWord.add(tile);
+                            break;
+
+                        case RIGHT:
+                            if (!thisTurnWord.contains(board[tile.y][tile.x + 1])) {
+                                thisTurnWord.add(board[tile.y][tile.x + 1]);
+                            }
+                            thisTurnWord.add(0, tile);
+                            break;
+
+                        case DOWN:
+                            if (!thisTurnWord.contains(board[tile.y + 1][tile.x])) {
+                                thisTurnWord.add(board[tile.y + 1][tile.x]);
+                            }
+                            thisTurnWord.add(0, tile);
+                            break;
+                    }
+                }
             }
             System.out.println(bool);
             return bool;
@@ -3251,10 +3316,13 @@ public class GUI extends javax.swing.JFrame {
             if (ValidWordTurn()) {
                 int dir = (thisTurnWord.get(0).y == thisTurnWord.get(1).y) ? Word.horizontal : Word.vertical;
                 placedWords.add(new Word(thisTurnWord, dir, CalculateWordValue(thisTurnWord)));
+                for (Tile tile : thisTurnWord) {
+                    tile.setMoveable(false);
+                }
                 thisTurnWord.clear();
                 System.out.println(thisTurnWord.size());
                 firstTurn = false;
-                System.out.println(placedWords.get(0).getWord());
+                System.out.println(placedWords.get(placedWords.size() - 1).getWord());
             }
         }
     }//GEN-LAST:event_jButtonPlayActionPerformed
@@ -3267,16 +3335,21 @@ public class GUI extends javax.swing.JFrame {
     }//GEN-LAST:event_jFrameJokerSelectWindowClosing
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        for (int i = 0; i < board.length; i++) {
-            for (int j = 0; j < board[i].length; j++) {
-                if (blanks[i][j]) {
-                    System.out.print("t ");
-                } else {
-                    System.out.print("f ");
-                }
-            }
-            System.out.println();
+//        for (int i = 0; i < board.length; i++) {
+//            for (int j = 0; j < board[i].length; j++) {
+//                if (blanks[i][j]) {
+//                    System.out.print("t ");
+//                } else {
+//                    System.out.print("f ");
+//                }
+//            }
+//            System.out.println();
+//        }
+
+        for (int i = 0; i < thisTurnWord.size(); i++) {
+            System.out.print(thisTurnWord.get(i).letter);
         }
+        System.out.println();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
